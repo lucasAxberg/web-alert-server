@@ -7,18 +7,25 @@ const host = "localhost";
 const port = 8000;
 const data_path = "./data.json";
 
-function read_file(filePath) {
-	// Create a file stream with utf-8 encoding
-	const file_stream = fs.createReadStream(filePath, "utf-8");
+function read_file(file_path) {
+	return new Promise((resolve, reject) => {
+		const chunks = [];
+		const stream = fs.createReadStream(file_path, "utf-8");
 
-	// On read error, print the error in the console
-	file_stream.on("error", (error) => {
-		console.log(`error: ${error.message}`);
-	});
+		// Adds the recieved data chunks to an array
+		stream.on("data", (data) => {
+			chunks.push(data);
+		});
 
-	// On recieved data chunk, print the chunk
-	file_stream.on("data", (chunk) => {
-		console.log(chunk);
+		// 'Returns' the chunks array joined to a single string
+		stream.on("end", () => {
+			resolve(chunks.join(""));
+		});
+
+		// Reject the promise on error
+		stream.on("error", (err) => {
+			reject(err);
+		});
 	});
 }
 
@@ -26,9 +33,22 @@ function on_post_recieved() {
 	console.log("POST request recieved");
 }
 
-function on_get_recieved() {
+function on_get_recieved(response) {
 	console.log("GET request recieved");
-	read_file(data_path);
+	read_file(data_path)
+		// Responds with the json object in a string
+		.then((data) => {
+			json_object = JSON.parse(data);
+			response.writeHead(200, { "Content-Type": "application/json" });
+			response.end(JSON.stringify(json_object));
+		})
+
+		// Catches any error in the functions
+		.catch((err) => {
+			console.error(err);
+			response.writeHead(404);
+			response.end();
+		});
 }
 
 function on_other_recieved() {
@@ -43,7 +63,7 @@ const request_listener = function (request, response) {
 			break;
 
 		case "GET":
-			on_get_recieved();
+			on_get_recieved(response);
 			break;
 
 		default:
