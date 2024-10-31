@@ -29,8 +29,54 @@ function read_file(file_path) {
 	});
 }
 
-function on_post_recieved() {
+function update_file(file_path, new_data) {
+	// Check if the file exists and save it to a variable
+	let exists;
+	try {
+		exists = fs.statSync(filePath).isFile();
+	} catch (err) {
+		exists = false;
+	}
+
+	// Create an empty object and fill it with the data if the file exists
+	let json_object = {};
+	if (exists) {
+		read_file(file_path).then((data) => {
+			json_object = JSON.parse(data);
+		});
+	}
+
+	// Assign the value from each key in new data to json_object
+	for (const key in new_data) {
+		json_object.key = new_data.key;
+	}
+
+	// Create writestream
+	const writeStream = fs.createWriteStream(file_path);
+
+	// Print error on error
+	writeStream.on("error", (err) => {
+		console.error(`Error writing to file ${file_path}:`, err);
+	});
+
+	// Write the updated json object to the file
+	writeStream.write(JSON.stringify(json_object), "utf8");
+	writeStream.end();
+}
+
+function on_post_recieved(request) {
 	console.log("POST request recieved");
+
+	// Add all data chunks into one array
+	const chunks = [];
+	request.on("data", (chunk) => {
+		chunks.push(chunk);
+	});
+
+	request.on("end", () => {
+		complete_data = JSON.parse(chunks.join(""));
+		update_file(data_path, complete_data);
+	});
 }
 
 function on_get_recieved(response) {
@@ -59,7 +105,7 @@ function on_other_recieved() {
 const request_listener = function (request, response) {
 	switch (request.method) {
 		case "POST":
-			on_post_recieved();
+			on_post_recieved(request);
 			break;
 
 		case "GET":
