@@ -5,7 +5,7 @@ const fs = require("node:fs");
 // Server settings
 const host = "localhost";
 const port = 8000;
-const data_path = "./data.json";
+const data_path = "data.json";
 
 function read_file(file_path) {
 	return new Promise((resolve, reject) => {
@@ -33,38 +33,41 @@ function update_file(file_path, new_data) {
 	// Check if the file exists and save it to a variable
 	let exists;
 	try {
-		exists = fs.statSync(filePath).isFile();
+		exists = fs.statSync(file_path).isFile();
 	} catch (err) {
+		console.error(err)
 		exists = false;
 	}
 
-	// Create an empty object and fill it with the data if the file exists
-	let json_object = {};
 	if (exists) {
 		read_file(file_path).then((data) => {
+
+			// Create an empty object and fill it with the data if the file exists
+			let json_object = {};
 			json_object = JSON.parse(data);
+
+			// Assign the value from each key in new data to json_object
+			for (const key in new_data) {
+				json_object[key] = new_data[key];
+			}
+			
+			// Create writestream
+			const writeStream = fs.createWriteStream(file_path);
+
+			// Print error on error
+			writeStream.on("error", (err) => {
+				console.error(`Error writing to file ${file_path}:`, err);
+			});
+
+			// Write the updated json object to the file
+			writeStream.write(JSON.stringify(json_object), "utf8");
+			writeStream.end();
 		});
 	}
 
-	// Assign the value from each key in new data to json_object
-	for (const key in new_data) {
-		json_object.key = new_data.key;
-	}
-
-	// Create writestream
-	const writeStream = fs.createWriteStream(file_path);
-
-	// Print error on error
-	writeStream.on("error", (err) => {
-		console.error(`Error writing to file ${file_path}:`, err);
-	});
-
-	// Write the updated json object to the file
-	writeStream.write(JSON.stringify(json_object), "utf8");
-	writeStream.end();
 }
 
-function on_post_recieved(request) {
+function on_post_recieved(request, response) {
 	console.log("POST request recieved");
 
 	// Add all data chunks into one array
@@ -75,7 +78,10 @@ function on_post_recieved(request) {
 
 	request.on("end", () => {
 		complete_data = JSON.parse(chunks.join(""));
+
 		update_file(data_path, complete_data);
+		response.writeHead(200, {'Content-Type':'text/plain'})
+		response.end('Data has been recieved successfully')
 	});
 }
 
@@ -105,7 +111,7 @@ function on_other_recieved() {
 const request_listener = function (request, response) {
 	switch (request.method) {
 		case "POST":
-			on_post_recieved(request);
+			on_post_recieved(request, response);
 			break;
 
 		case "GET":
