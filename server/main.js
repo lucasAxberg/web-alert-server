@@ -9,10 +9,12 @@ const data_path = "data.json";
 
 function read_file(file_path) {
 	return new Promise((resolve, reject) => {
-		const chunks = [];
+
+		// Create read-stream
 		const stream = fs.createReadStream(file_path, "utf-8");
 
 		// Adds the recieved data chunks to an array
+		const chunks = [];
 		stream.on("data", (data) => {
 			chunks.push(data);
 		});
@@ -39,14 +41,12 @@ function update_file(file_path, new_data) {
 		exists = false;
 	}
 
+	// Update data if file exists
 	if (exists) {
 		read_file(file_path).then((data) => {
 
-			// Create an empty object and fill it with the data if the file exists
-			let json_object = {};
-			json_object = JSON.parse(data);
-
-			// Assign the value from each key in new data to json_object
+			// Get the stored data and update it with the new data
+			let json_object = JSON.parse(data);
 			for (const key in new_data) {
 				json_object[key] = new_data[key];
 			}
@@ -54,7 +54,7 @@ function update_file(file_path, new_data) {
 			// Create writestream
 			const writeStream = fs.createWriteStream(file_path);
 
-			// Print error on error
+			// Add error callback
 			writeStream.on("error", (err) => {
 				console.error(`Error writing to file ${file_path}:`, err);
 			});
@@ -63,8 +63,7 @@ function update_file(file_path, new_data) {
 			writeStream.write(JSON.stringify(json_object), "utf8");
 			writeStream.end();
 		});
-	}
-
+	} 
 }
 
 function on_post_recieved(request, response) {
@@ -77,9 +76,12 @@ function on_post_recieved(request, response) {
 	});
 
 	request.on("end", () => {
-		complete_data = JSON.parse(chunks.join(""));
 
+		// Joins the data and updates the file
+		complete_data = JSON.parse(chunks.join(""));
 		update_file(data_path, complete_data);
+
+		// Responds on successful data recieved
 		response.writeHead(200, {'Content-Type':'text/plain'})
 		response.end('Data has been recieved successfully')
 	});
@@ -88,6 +90,7 @@ function on_post_recieved(request, response) {
 function on_get_recieved(response) {
 	console.log("GET request recieved");
 	read_file(data_path)
+
 		// Responds with the json object in a string
 		.then((data) => {
 			json_object = JSON.parse(data);
