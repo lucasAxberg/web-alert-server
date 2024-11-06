@@ -33,13 +33,8 @@ function read_file(file_path) {
 
 function update_file(file_path, new_data) {
 	// Check if the file exists and save it to a variable
-	let exists;
-	try {
-		exists = fs.statSync(file_path).isFile();
-	} catch (err) {
-		console.error(err)
-		exists = false;
-	}
+	let exists = fs.existsSync(file_path);
+	
 
 	// Update data if file exists
 	if (exists) {
@@ -76,14 +71,30 @@ function on_post_recieved(request, response) {
 	});
 
 	request.on("end", () => {
+		try {
+			
+			// Joins the data and updates the file
+			complete_data = JSON.parse(chunks.join(""));
+			update_file(data_path, complete_data);
+	
+			// Responds on successful data recieved
+			response.writeHead(200, {'Content-Type':'text/plain'})
+			response.end('Data has been recieved successfully')
+		} catch (error) {
+			
+			// Respond properly to errors
+			if (error.name == "SyntaxError"){
+				
+				// Responds on failed data convertion
+				response.writeHead(400, {'Content-Type':'text/plain'})
+				response.end('Data is not in proper JSON format')
+			} else {
 
-		// Joins the data and updates the file
-		complete_data = JSON.parse(chunks.join(""));
-		update_file(data_path, complete_data);
-
-		// Responds on successful data recieved
-		response.writeHead(200, {'Content-Type':'text/plain'})
-		response.end('Data has been recieved successfully')
+				// Responds with the servers error message on other error
+				response.writeHead(400, {'Content-Type':'text/plain'})
+				response.end(`Server error:\n${error}`)
+			}
+		}
 	});
 }
 
