@@ -78,6 +78,7 @@ function on_post_recieved(request, response) {
 			update_file(data_path, complete_data);
 	
 			// Responds on successful data recieved
+			response.setHeader('Access-Control-Allow-Origin', '*') // Allows requests from all origins (TODO: Fix so not all)
 			response.writeHead(200, {'Content-Type':'text/plain'})
 			response.end('Data has been recieved successfully')
 		} catch (error) {
