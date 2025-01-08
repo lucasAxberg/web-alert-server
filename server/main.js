@@ -1,11 +1,12 @@
 // Modules
 const http = require("http");
 const fs = require("node:fs");
+const path = require("node:path");
 
 // Server settings
 const host = "localhost";
 const port = 8000;
-const data_path = "data.json";
+const data_path = path.join(__dirname, "data.json");
 
 function read_file(file_path) {
 	return new Promise((resolve, reject) => {
@@ -99,13 +100,28 @@ function on_post_recieved(request, response) {
 	});
 }
 
-function on_get_recieved(response) {
+function on_get_recieved(response, request) {
 	console.log("GET request recieved");
+
+	// Get query parameters to look for which keys should me sent
+	const query_params = new URL(`http://localhost${request.url}`).searchParams.get("keys")
+	
 	read_file(data_path)
 
 		// Responds with the json object in a string
 		.then((data) => {
-			json_object = JSON.parse(data);
+			
+			// Parse the read data
+			let json_object = JSON.parse(data);
+
+			// Filter object by keys in query parameters if query parameters exist
+			if (query_params) {
+				const keys = query_params.split(",")
+				const filtered_entries = Object.entries(json_object).filter(([key, value]) => keys.includes(key));
+				json_object = Object.fromEntries(filtered_entries)
+			}	
+
+			// Respond with data
 			response.writeHead(200, { "Content-Type": "application/json" });
 			response.end(JSON.stringify(json_object));
 		})
@@ -130,7 +146,7 @@ const request_listener = function (request, response) {
 			break;
 
 		case "GET":
-			on_get_recieved(response);
+			on_get_recieved(response, request);
 			break;
 
 		default:
