@@ -35,31 +35,39 @@ function read_file(file_path) {
 function update_file(file_path, new_data) {
 	// Check if the file exists and save it to a variable
 	let exists = fs.existsSync(file_path);
-	
 
 	// Update data if file exists
-	if (exists) {
-		read_file(file_path).then((data) => {
-
-			// Get the stored data and update it with the new data
-			let json_object = JSON.parse(data);
-			for (const key in new_data) {
-				json_object[key] = new_data[key];
-			}
-			
-			// Create writestream
-			const writeStream = fs.createWriteStream(file_path);
-
-			// Add error callback
-			writeStream.on("error", (err) => {
-				console.error(`Error writing to file ${file_path}:`, err);
+	new Promise((resolve, reject) => {
+		if (exists) {
+			read_file(file_path)
+			.then((data) => {
+				// Returned the stored data
+				resolve(JSON.parse(data))		
 			});
+		} else {
+			// Return an ampty object if file didnt exist
+			resolve({})
+		}
+	
+	}).then((data_object) => {
 
-			// Write the updated json object to the file
-			writeStream.write(JSON.stringify(json_object), "utf8");
-			writeStream.end();
+		// Update with the new data
+		for (const key in new_data) {
+			data_object[key] = new_data[key];
+		}
+		
+		// Create writestream
+		const writeStream = fs.createWriteStream(file_path);
+
+		// Add error callback
+		writeStream.on("error", (err) => {
+			console.error(`Error writing to file ${file_path}:`, err);
 		});
-	} 
+
+		// Write the updated json object to the file
+		writeStream.write(JSON.stringify(data_object), "utf8");
+		writeStream.end();
+	})
 }
 
 function on_post_recieved(request, response) {
