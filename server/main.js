@@ -27,7 +27,11 @@ function read_file(file_path) {
 
 		// Reject the promise on error
 		stream.on("error", (err) => {
-			reject(err);
+			if (err.code === 'ENOENT') {
+				resolve("{}")
+			} else {
+				reject(err);
+			}
 		});
 	});
 }
