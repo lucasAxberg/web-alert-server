@@ -37,23 +37,11 @@ function read_file(file_path) {
 }
 
 function update_file(file_path, new_data) {
-	// Check if the file exists and save it to a variable
-	let exists = fs.existsSync(file_path);
 
-	// Update data if file exists
-	new Promise((resolve, reject) => {
-		if (exists) {
-			read_file(file_path)
-			.then((data) => {
-				// Returned the stored data
-				resolve(JSON.parse(data))		
-			});
-		} else {
-			// Return an ampty object if file didnt exist
-			resolve({})
-		}
-	
-	}).then((data_object) => {
+	// Read stored data
+	read_file(file_path)
+	.then((data) => JSON.parse(data))		
+	.then((data_object) => {
 
 		// Update with the new data
 		for (const key in new_data) {
