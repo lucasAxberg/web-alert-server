@@ -8,6 +8,7 @@ async function get_value(url, path) {    // Example: get_value("https://www.webh
   // Go to the url and get the elements matching the path
   const page = await context.newPage();
   await page.goto(url);
+  await page.waitForSelector(path)
   const element = await page.locator(path).all();
 
   // Make sure there only is one element
