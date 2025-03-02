@@ -23,3 +23,27 @@ async function get_value(url, path) {    // Example: get_value("https://www.webh
   await browser.close();
   return return_value
 }
+
+async function compare_values(url, path, stored_value) {
+  const page_value = await get_value(url, path)
+  const change = {};
+
+  // Run one comparison if the values are numbers
+  if (!isNaN(page_value) && !isNaN(stored_value)){
+
+    // Calculate the percentage difference
+    const difference = stored_value - page_value;
+    const fractal_change = difference / stored_value;
+    const percentage_change = Math.round(fractal_change * 1000) / 10;
+    
+    // Store the raw and calculated change
+    change["raw-change"] = difference;
+    change["percentage-change"] = percentage_change;
+
+    return change
+
+  // If values are text run another comparison
+  } else {
+    
+  }
+}
