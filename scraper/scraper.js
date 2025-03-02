@@ -1,4 +1,5 @@
 const playwright = require('playwright');
+const diff  = require('diff')
 
 async function get_value(url, path) {    // Example: get_value("https://www.webhallen.com/", '//div[@class="footer-wrapperi"]')
   // Launch a non-headless browser
@@ -24,26 +25,45 @@ async function get_value(url, path) {    // Example: get_value("https://www.webh
   return return_value
 }
 
-async function compare_values(url, path, stored_value) {
-  const page_value = await get_value(url, path)
-  const change = {};
+function compare_values(value_1, value_2) {
+  const change_object = {};
 
   // Run one comparison if the values are numbers
-  if (!isNaN(page_value) && !isNaN(stored_value)){
+  if (!isNaN(value_1) && !isNaN(value_2)){
 
     // Calculate the percentage difference
-    const difference = stored_value - page_value;
-    const fractal_change = difference / stored_value;
+    const difference = value_1 - value_2;
+    const fractal_change = difference / value_1;
     const percentage_change = Math.round(fractal_change * 1000) / 10;
     
     // Store the raw and calculated change
-    change["raw-change"] = difference;
-    change["percentage-change"] = percentage_change;
+    change_object["raw-change"] = difference;
+    change_object["percentage-change"] = percentage_change;
 
-    return change
+    return change_object
 
   // If values are text run another comparison
   } else {
+
+    // Define negating words
+    const negating_words = [ "don't", "can't", "no", "not" ]
     
+    // Check the difference of the 2 strings and get all aditions and removals
+    const difference = diff.diffWords(value_1, value_2, {ignoreCase: true});
+    const modifications = difference.filter((element) => element.added || element.removed)
+    
+    // Loop through all modifications
+    for (const mod_obj in modifications) {
+
+      // Check if the words contain a negating word and set "new_meaning" accordingly
+      const words = mod_obj["value"]
+      if (words.some(word => negating_words.includes(word))){
+        change_object["new-meaning"] = true;
+      }
+    }
+    
+    return change_object
   }
 }
+
+
