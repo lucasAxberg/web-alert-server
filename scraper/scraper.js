@@ -76,3 +76,8 @@ function compare_values(old_value, new_value) {
     return change_object
   }
 }
+
+module.exports = {
+  get_value,
+  compare_values
+}

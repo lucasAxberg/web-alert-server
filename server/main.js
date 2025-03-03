@@ -2,6 +2,7 @@
 const http = require("http");
 const fs = require("node:fs");
 const path = require("node:path");
+const {get_value, compare_values} = require('../scraper/scraper.js')
 
 // Server settings
 const host = "localhost";
