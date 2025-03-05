@@ -4,10 +4,9 @@ const diff  = require('diff')
 
 // Import functions and variables
 const {read_file, update_file} = require("./functions.js")
-const {data_path} = require("../data/config.js")
+const {data_path, local_check_interval} = require("../data/config.js")
 
 // Time settings
-const local_check_interval = 1000 * 20
 const web_check_interval = 1000 * 60
 
 async function get_value(url, path) {
@@ -114,8 +113,8 @@ async function check_value() {
 		if (change_object["type"] == "number") console.log("Number");
 		if (change_object["type"] == "text") console.log("Text");
 
-		setTimeout(check_value, local_check_interval)
 	}
+	setTimeout(check_value, local_check_interval)
 }
 
 setTimeout(check_value, local_check_interval)
