@@ -1,7 +1,7 @@
 // Modules
 const http = require("http");
 const {read_file, update_file} = require("./functions.js")
-const {data_path} = require("./config.js")
+const {data_path} = require("../data/config.js")
 
 // Server settings
 const host = "localhost";

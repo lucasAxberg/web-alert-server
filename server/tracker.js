@@ -4,7 +4,7 @@ const diff  = require('diff')
 
 // Import functions and variables
 const {read_file, update_file} = require("./functions.js")
-const {data_path} = require("./config.js")
+const {data_path} = require("../data/config.js")
 
 // Time settings
 const local_check_interval = 1000 * 20
@@ -93,7 +93,7 @@ async function check_value() {
 	console.log("Checking. Current time:", current_time)
 
 	// Loop thorugh all the stored trackers
-	const text_data = await read_file("server/data.json")
+	const text_data = await read_file(data_path)
 	const data = JSON.parse(text_data);
 	for (const key in data) {
 		
