@@ -44,6 +44,9 @@ function compare_values(old_value, new_value) {
     const fractal_change = difference / old_value;
     const percentage_change = Math.round(fractal_change * 1000) / 10;
     
+    change_object["type"] = "number";
+    change_object["new-value"] = new_value;
+    
     // Store the raw and calculated change
     change_object["numerical-change"] = difference;
     change_object["percentage-change"] = percentage_change;
@@ -63,6 +66,8 @@ function compare_values(old_value, new_value) {
     // Set default values
     change_object["new-meaning"] = false;
     change_object["numerical-change"] = 0;
+    change_object["type"] = "text";
+    change_object["new-value"] = new_value;
     
     // Loop through all modifications
     modifications.forEach((mod_obj) => {
@@ -97,18 +102,18 @@ async function check_value() {
 	for (const key in data) {
 		
 		// Skip item if the interval has not passes
-		if (current_time - data[key]["checked"] < web_check_interval) continue;
-		
-		// Update the checked time and write the change to the file
-		data[key]["checked"] = current_time
-		const obj = {}
-		obj[key] = data[key]
-		update_file(data_path, obj, false)
+		if (current_time - data[key]["checked"] < data[key]["interval"]) continue;
 		
 		// Get the new value from the web and check the difference
 		const web_value = await get_value(data[key]["url"], data[key]["path"])
 		const change_object = compare_values(data[key]["value"], web_value)
-		console.log(web_value)
+
+		// Update the checked time and add change object
+		data[key]["checked"] = current_time;
+		data[key]["change"] = change_object;
+		const obj = {}
+		obj[key] = data[key]
+		update_file(data_path, obj, false)
 
 		if (change_object["type"] == "number") console.log("Number");
 		if (change_object["type"] == "text") console.log("Text");
