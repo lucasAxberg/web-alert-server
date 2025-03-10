@@ -79,62 +79,9 @@ function on_get_recieved(response, request) {
 		});
 }
 
-function on_delete_recieved(response, request) {
-	console.log("DELETE request recieved");
-
-	// Get query parameters to look for which keys should me sent
-	const query_parameter = new URL(`http://localhost${request.url}`).searchParams.get("index")
-	
-	read_file(data_path)
-		.then((data_string) => JSON.parse(data_string))
-		.then((data) => {
-
-			// Filter object by keys in query parameters if query parameters exist
-			if (query_parameter) {
-				const new_object = remove_key(data, query_parameter)
-
-				const writeStream = fs.createWriteStream(data_path);
-
-				// Add error callback
-				writeStream.on("error", (err) => {
-					console.error(`Error writing to file ${file_path}:`, err);
-				});
-
-				// Write the updated json object to the file
-				writeStream.write(JSON.stringify(new_object), "utf8");
-				writeStream.end();
-			}	
-
-			// Respond with data
-			response.writeHead(200, { "Content-Type": "plain/text" });
-			response.end("Data remove successfulley");
-		})
-
-		// Catches any error in the functions
-		.catch((err) => {
-			console.error(err);
-			response.writeHead(404);
-			response.end();
-		});
-}
-
 function on_other_recieved() {
 	console.log("UNKNOWN request recieved");
 }
-
-function remove_key(data_object, indicies) {
-	// Get entries and remove the one with the key 'index'
-	const filteredEntries = Object.entries(data_object).filter(([key, ]) => indicies.includes(key) === false);
-
-	// Update all entries keys to match their index
-	for (let i = 0; i < filteredEntries.length; i++) {
-		filteredEntries[i][0] = i.toString()
-	}
-
-	// Return an object created from the filtered entries
-	return Object.fromEntries(filteredEntries);
-}
-
 
 // Function for listening to interactions
 const request_listener = function (request, response) {
@@ -145,10 +92,6 @@ const request_listener = function (request, response) {
 
 		case "GET":
 			on_get_recieved(response, request);
-			break;
-
-		case "DELETE":
-			on_delete_recieved(response, request)
 			break;
 
 		default:
