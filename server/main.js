@@ -6,7 +6,7 @@ const {read_file, update_file} = require("./functions.js")
 const {data_path, host, port} = require("../data/config.js")
 
 function on_post_recieved(request, response) {
-	console.log("POST request recieved");
+	print_log("POST request recieved");
 
 	// Get query parameters to look for which keys should me sent
 	const query_parameter = new URL(`http://localhost${request.url}`).searchParams.get("delete")
@@ -48,7 +48,7 @@ function on_post_recieved(request, response) {
 }
 
 function on_get_recieved(response, request) {
-	console.log("GET request recieved");
+	print_log("GET request recieved");
 
 	// Get query parameters to look for which keys should me sent
 	const query_params = new URL(`http://localhost${request.url}`).searchParams.get("keys")
@@ -75,14 +75,14 @@ function on_get_recieved(response, request) {
 
 		// Catches any error in the functions
 		.catch((err) => {
-			console.error(err);
+			print_error(err);
 			response.writeHead(404);
 			response.end();
 		});
 }
 
 function on_other_recieved() {
-	console.log("UNKNOWN request recieved");
+	print_log("UNKNOWN request recieved");
 }
 
 // Function for listening to interactions
@@ -101,13 +101,19 @@ const request_listener = function (request, response) {
 	}
 };
 
+function print_log(msg) {
+	console.log('\x1b[0;32m<server>\x1b[0m', msg, '\n')
+}
+function print_error(msg) {
+	console.log('\x1b[0;32m<server>\x1b[0m', msg, '\n')
+}
 const server = http.createServer(request_listener);
 server.listen(port, host, () => {
-	console.log(`Server is running on http://${host}:${port}`);
+	print_log(`Server is running on http://${host}:${port}`);
 });
 
 // Start watcher
 const watcher = spawn('node', [resolve(__dirname, 'watcher.js')])
-watcher.stdout.on('data',(data) => {console.log('<watcher> OUTPUT:', data.toString())})
-watcher.stderr.on('data',(error) => {console.error('<watcher> ERROR:', error.toString())})
-watcher.on('exit', (code) => {console.log('<watcher> EXITED WITH CODE:', code.toString())})
+watcher.stdout.on('data',(data) => {console.log('\x1b[0;33m<watcher>\x1b[0m', data.toString())})
+watcher.stderr.on('data',(error) => {console.error('\x1b[0;33m<watcher>\x1b[0m', error.toString())})
+watcher.on('exit', (code) => {console.log('\x1b[0;33m<watcher>\x1b[0m exited with code', code.toString())})
