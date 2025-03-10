@@ -1,5 +1,7 @@
 // Modules
 const http = require("http");
+const { resolve } = require('node:path')
+const { spawn } = require('child_process')
 const {read_file, update_file} = require("./functions.js")
 const {data_path, host, port} = require("../data/config.js")
 
@@ -103,3 +105,9 @@ const server = http.createServer(request_listener);
 server.listen(port, host, () => {
 	console.log(`Server is running on http://${host}:${port}`);
 });
+
+// Start watcher
+const watcher = spawn('node', [resolve(__dirname, 'watcher.js')])
+watcher.stdout.on('data',(data) => {console.log('<watcher> OUTPUT:', data.toString())})
+watcher.stderr.on('data',(error) => {console.error('<watcher> ERROR:', error.toString())})
+watcher.on('exit', (code) => {console.log('<watcher> EXITED WITH CODE:', code.toString())})
