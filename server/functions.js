@@ -77,9 +77,9 @@ function update_file(file_path, new_data, remove) {
 	})
 }
 
-function remove_key(data_object, indicies) {
+function remove_key(data_object, index) {
 	// Get entries and remove the one with the key 'index'
-	const filteredEntries = Object.entries(data_object).filter(([key, ]) => indicies.includes(key) === false);
+	const filteredEntries = Object.entries(data_object).filter(([key, ]) => index !== key);
 
 	// Update all entries keys to match their index
 	for (let i = 0; i < filteredEntries.length; i++) {
@@ -93,5 +93,6 @@ function remove_key(data_object, indicies) {
 module.exports = {
   read_file,
   update_file,
-  write_file
+  write_file,
+  remove_key
 }
