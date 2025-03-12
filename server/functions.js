@@ -28,6 +28,20 @@ function read_file(file_path) {
 	});
 }
 
+function write_file(file_path, data) {
+		// Create writestream
+		const writeStream = fs.createWriteStream(file_path);
+
+		// Add error callback
+		writeStream.on("error", (err) => {
+			console.error(`Error writing to file ${file_path}:`, err);
+		});
+
+		// Write the updated json object to the file
+		writeStream.write(JSON.stringify(data), "utf8");
+		writeStream.end();
+}
+
 function update_file(file_path, new_data, remove) {
 
 	// Read stored data
@@ -78,5 +92,6 @@ function remove_key(data_object, indicies) {
 
 module.exports = {
   read_file,
-  update_file  
+  update_file,
+  write_file
 }
