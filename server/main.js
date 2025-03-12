@@ -5,53 +5,11 @@ const { spawn } = require('child_process')
 const {read_file, update_file, write_file, remove_key} = require("./functions.js")
 const {data_path, host, port} = require("../data/config.js")
 
-function on_post_recieved(request, response) {
-	print_log("POST request recieved");
-
-	// Get query parameters to look for which keys should me sent
-	const query_parameter = new URL(`http://localhost${request.url}`).searchParams.get("delete")
-	const remove = query_parameter === "true" ? true : false 
-	
-	// Add all data chunks into one array
-	const chunks = [];
-	request.on("data", (chunk) => {
-		chunks.push(chunk);
-	});
-
-	request.on("end", () => {
-		try {
-			
-			// Joins the data and updates the file
-			const complete_data = JSON.parse(chunks.join(""));
-			update_file(data_path, complete_data, remove);
-	
-			// Responds on successful data recieved
-			response.setHeader('Access-Control-Allow-Origin', '*') // Allows requests from all origins (TODO: Fix so not all)
-			response.writeHead(200, {'Content-Type':'text/plain'})
-			response.end('Data has been recieved successfully')
-		} catch (error) {
-			
-			// Respond properly to errors
-			if (error.name == "SyntaxError"){
-				
-				// Responds on failed data convertion
-				response.writeHead(400, {'Content-Type':'text/plain'})
-				response.end('Data is not in proper JSON format')
-			} else {
-
-				// Responds with the servers error message on other error
-				response.writeHead(400, {'Content-Type':'text/plain'})
-				response.end(`Server error:\n${error}`)
-			}
-		}
-	});
-}
-
-function on_get_recieved(response, request) {
-	print_log("GET request recieved");
-
-	// Get query parameters to look for which keys should me sent
-	const query_params = new URL(`http://localhost${request.url}`).searchParams.get("keys")
+function on_data(response, request, index) {
+	if (request.method !== "GET") {
+		response.writeHead(405, {'Content-Type':'text/plain'})
+		response.end(`Method "${request.method}" is not allowed at endpoint "/get"`)
+	}
 	
 	read_file(data_path)
 
@@ -61,10 +19,9 @@ function on_get_recieved(response, request) {
 			// Parse the read data
 			let json_object = JSON.parse(data);
 
-			// Filter object by keys in query parameters if query parameters exist
-			if (query_params) {
-				const keys = query_params.split(",")
-				const filtered_entries = Object.entries(json_object).filter(([key, value]) => keys.includes(key));
+			// Filter object by sub-path if it existst
+			if (Object.keys(json_object).includes(index)) {
+				const filtered_entries = Object.entries(json_object).filter(([key, ]) => index === key);
 				json_object = Object.fromEntries(filtered_entries)
 			}	
 
@@ -245,7 +202,7 @@ const request_listener = function (request, response) {
 			break;
 		
 		case "data":
-			on_get_recieved(response, request);
+			on_data(response, request, url_path_list[1]);
 			break;
 
 		default:
