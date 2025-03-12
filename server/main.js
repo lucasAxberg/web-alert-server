@@ -167,28 +167,84 @@ function on_remove(request, response) {
 	})
 }
 
+function on_update(request, response, index) {
+	// Return error if index is undefined or empty string
+	if (!index) {
+		response.writeHead(400, {'Content-Type':'text/plain'})
+		response.end('No index specified. Add "/<index>" after "/update"')
+		return
+	}
+
+	// Add all data chunks into one array
+	const chunks = [];
+	request.on("data", (chunk) => {
+		chunks.push(chunk);
+	});
+
+	request.on("end", () => {
+		// Responds with error if wrong method was used
+		if (request.method !== "POST") {
+			response.writeHead(405, {'Content-Type':'text/plain'})
+			response.end(`Method "${request.method}" is not allowed at endpoint "/update"`)
+			return
+		}
+
+		let new_object;
+		try {
+			new_object = JSON.parse(chunks.join(""))
+		} catch {
+			response.writeHead(400, {'Content-Type':'text/plain'})
+			response.end('Data is not in correct JSON format')
+			return
+		} 
+
+		// Read and parse data file
+		read_file(data_path)
+		.then((text_object) => JSON.parse(text_object))
+		.then((data_object) => {
+			// Respond with error if key doesn't exist
+			if (!Object.keys(data_object).includes(index)) {
+				response.writeHead(400, {'Content-Type':'text/plain'})
+				response.end('Index does not exist in stored data')
+				return
+			}
+
+			// Update objects value and write to file
+			data_object[index] = new_object
+			write_file(data_path, data_object)
+
+			// Respond on successful save
+			response.writeHead(200, {'Content-Type':'text/plain'})
+			response.end('Data updated successfully')
+		})
+	})
+		
+}
+
 function on_other_recieved() {
 	print_log("UNKNOWN request recieved");
 }
 
 // Function for listening to interactions
 const request_listener = function (request, response) {
-	const url = new URL(`http://${host}${request.url}`)
-	console.log(url.pathname)
-	switch (url.pathname) {
-		case "/update":
-			on_post_recieved(request, response);
+	// Destruct the url_path
+	const url_path_list = new URL(`http://${host}${request.url}`).pathname.split("/")
+	url_path_list.shift()
+
+	switch (url_path_list[0]) {
+		case "update":
+			on_update(request, response, url_path_list[1]);
 			break;
 
-		case "/remove":
+		case "remove":
 			on_remove(request, response);
 			break;
 
-		case "/add":
+		case "add":
 			on_add(request, response)
 			break;
 		
-		case "/data":
+		case "data":
 			on_get_recieved(response, request);
 			break;
 
