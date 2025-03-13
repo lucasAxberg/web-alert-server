@@ -6,14 +6,24 @@ const {read_file, update_file, write_file, remove_key} = require("./functions.js
 const {data_path, host, port} = require("../data/config.js")
 
 function on_data(response, request, index) {
-	if (request.method !== "GET") {
-		response.writeHead(405, {'Content-Type':'text/plain'})
-		response.end(`Method "${request.method}" is not allowed at endpoint "/get"`)
-	}
-	
-	read_file(data_path)
+	if (request.method === "DELETE") {
+		// Read and parse data file
+		read_file(data_path)
+		.then((text_object) => JSON.parse(text_object))
+		.then((data_object) => {
 
-		// Responds with the json object in a string
+			// Parse sent data, remove the item with that key and update the file
+			const updated_object = remove_key(data_object, index)
+			write_file(data_path, updated_object)
+
+			// Respond when successfull
+			response.writeHead(200, {'Content-Type':'text/plain'})
+			response.end('Data removed')
+		})
+	}	else if (request.method === "GET") {
+		read_file(data_path)
+
+			// Responds with the json object in a string
 		.then((data) => {
 			
 			// Parse the read data
@@ -36,6 +46,12 @@ function on_data(response, request, index) {
 			response.writeHead(404);
 			response.end();
 		});
+		
+	} else {
+		// Respond with error if request isn't GET or DELETE
+		response.writeHead(405, {'Content-Type':'text/plain'})
+		response.end(`Method "${request.method}" is not allowed at endpoint "/data"`)
+	}
 }
 
 function on_add(request, response) {
@@ -87,41 +103,6 @@ function on_add(request, response) {
 			}
 		}
 	});
-}
-
-function on_remove(request, response) {
-
-	// Add all data chunks into one array
-	const chunks = [];
-	request.on("data", (chunk) => {
-		chunks.push(chunk);
-	});
-
-	request.on("end", () => {
-
-		// Responds with error if wrong method was used
-		if (request.method !== "POST") {
-			response.writeHead(405, {'Content-Type':'text/plain'})
-			response.end(`Method "${request.method}" is not allowed at endpoint "/add"`)
-			return
-		}
-
-		// Read and parse data file
-		read_file(data_path)
-		.then((text_object) => JSON.parse(text_object))
-		.then((data_object) => {
-
-			// Parse sent data, remove the item with that key and update the file
-			const key = chunks.join("")
-			const updated_object = remove_key(data_object, key)
-			write_file(data_path, updated_object)
-
-			// Respond when successfull
-			response.writeHead(200, {'Content-Type':'text/plain'})
-			response.end('Data removed')
-		})
-		
-	})
 }
 
 function on_update(request, response, index) {
@@ -191,10 +172,6 @@ const request_listener = function (request, response) {
 	switch (url_path_list[0]) {
 		case "update":
 			on_update(request, response, url_path_list[1]);
-			break;
-
-		case "remove":
-			on_remove(request, response);
 			break;
 
 		case "add":
