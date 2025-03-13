@@ -2,10 +2,12 @@
 const http = require("http");
 const { resolve } = require('node:path')
 const { spawn } = require('child_process')
-const {read_file, update_file, write_file, remove_key} = require("./functions.js")
+const {read_file, write_file, remove_key} = require("./functions.js")
 const {data_path, host, port} = require("../data/config.js")
 
 function on_data(response, request, index) {
+
+	// If DELETE
 	if (request.method === "DELETE") {
 		// Read and parse data file
 		read_file(data_path)
@@ -20,19 +22,18 @@ function on_data(response, request, index) {
 			response.writeHead(200, {'Content-Type':'text/plain'})
 			response.end('Data removed')
 		})
+
+	// If GET
 	}	else if (request.method === "GET") {
+		// Read file and parse JSON object
 		read_file(data_path)
-
-			// Responds with the json object in a string
-		.then((data) => {
+		.then((text_object) => JSON.parse(text_object))
+		.then((json_object) => {
 			
-			// Parse the read data
-			let json_object = JSON.parse(data);
-
 			// Filter object by sub-path if it existst
 			if (Object.keys(json_object).includes(index)) {
 				const filtered_entries = Object.entries(json_object).filter(([key, ]) => index === key);
-				json_object = Object.fromEntries(filtered_entries)
+				json_object = Object.fromEntries(filtered_entries)[index]
 			}	
 
 			// Respond with data
@@ -55,6 +56,7 @@ function on_data(response, request, index) {
 }
 
 function on_add(request, response) {
+
 	// Add all data chunks into one array
 	const chunks = [];
 	request.on("data", (chunk) => {
@@ -62,7 +64,6 @@ function on_add(request, response) {
 	});
 
 	request.on("end", () => {
-
 		// Responds with error if wrong method was used
 		if (request.method !== "POST") {
 			response.writeHead(405, {'Content-Type':'text/plain'})
@@ -88,16 +89,13 @@ function on_add(request, response) {
 			})
 	
 		} catch (error) {
-			
-			// Respond properly to errors
+			// Respond with a formating error if data was not JSON object
 			if (error.name == "SyntaxError"){
-				
-				// Responds on failed data convertion
 				response.writeHead(400, {'Content-Type':'text/plain'})
 				response.end('Data is not in proper JSON format')
-			} else {
 
-				// Responds with the servers error message on other error
+			// Responds with the servers error message on other error
+			} else {
 				response.writeHead(400, {'Content-Type':'text/plain'})
 				response.end(`Server error:\n${error}`)
 			}
