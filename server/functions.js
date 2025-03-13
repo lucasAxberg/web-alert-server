@@ -28,6 +28,20 @@ function read_file(file_path) {
 	});
 }
 
+function write_file(file_path, data) {
+		// Create writestream
+		const writeStream = fs.createWriteStream(file_path);
+
+		// Add error callback
+		writeStream.on("error", (err) => {
+			console.error(`Error writing to file ${file_path}:`, err);
+		});
+
+		// Write the updated json object to the file
+		writeStream.write(JSON.stringify(data), "utf8");
+		writeStream.end();
+}
+
 function update_file(file_path, new_data, remove) {
 
 	// Read stored data
@@ -63,8 +77,22 @@ function update_file(file_path, new_data, remove) {
 	})
 }
 
+function remove_key(data_object, index) {
+	// Get entries and remove the one with the key 'index'
+	const filteredEntries = Object.entries(data_object).filter(([key, ]) => index !== key);
+
+	// Update all entries keys to match their index
+	for (let i = 0; i < filteredEntries.length; i++) {
+		filteredEntries[i][0] = i.toString()
+	}
+
+	// Return an object created from the filtered entries
+	return Object.fromEntries(filteredEntries);
+}
 
 module.exports = {
   read_file,
-  update_file  
+  update_file,
+  write_file,
+  remove_key
 }
